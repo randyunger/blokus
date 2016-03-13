@@ -1,0 +1,6 @@
+@(tray: service.Tray)
+
+@tray.shapes.map(pl => {
+    val (player, playerShapes) = (pl._1, pl._2)
+    playerShapes.map(sh => <span>{sh.toString}</span> )
+})

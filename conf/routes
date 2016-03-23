@@ -2,15 +2,23 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Home page
-GET         /                    controllers.Application.index
-GET         /display                    controllers.Application.displayLatest
+# Three apps in one!
+# Blokus Server:
+POST        /newGame                controllers.Application.newGameAPI
 
-POST        /newGame             controllers.Application.newGame
-POST        /move                controllers.Application.move
-POST        /watch               controllers.Application.watch
+# Blokus server UI:
+GET         /                       controllers.Application.index
+POST        /                       controllers.Application.newGameUI
+GET         /display                controllers.Application.displayStart
+GET         /display/:id/:ix        controllers.Application.displaySnapshot(id, ix: Int)
+
+# Blokus Agent:
+POST        /move                   controllers.Application.move
+
+# Blokus Spectator
+POST        /watch                  controllers.Application.watch
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file        controllers.Assets.at(path="/public", file)
+GET         /assets/*file           controllers.Assets.at(path="/public", file)
 
     

@@ -1,0 +1,5 @@
+@(gameIdAndTime: List[(java.util.UUID, org.joda.time.DateTime)])
+
+@gameIdAndTime.map{case(id, time) => {
+    <span><a href = "/display/@{id}/0">@{id}</a></span>
+}}

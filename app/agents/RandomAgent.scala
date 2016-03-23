@@ -2,7 +2,7 @@ package agents
 
 import service._
 
-import scalaz.{\/-, -\/, \/}
+import scalaz.{-\/, \/, \/-}
 
 /**
  * Created by runger on 3/9/16.
@@ -10,7 +10,7 @@ import scalaz.{\/-, -\/, \/}
 
 class RandomAgent {
 
-  def play(myPlayer: Player, liveGame: LiveGame): Pass.type \/ Move = {
+  def play(myPlayer: Player, liveGame: GameSnapshot): Pass.type \/ Move = {
     val myShapes = liveGame.gameState.tray.shapesFor(myPlayer)._2
     val myPieces = myShapes.map(shape => shape.pieces(myPlayer.color))
     val validMoves = for {

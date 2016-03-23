@@ -1,6 +1,41 @@
 @(tray: service.Tray)
 
-@tray.shapes.map(pl => {
-    val (player, playerShapes) = (pl._1, pl._2)
-    playerShapes.map(sh => <span>{sh.toString}</span> )
-})
+@for((pl, shapes) <- tray.shapes) {
+    <div class="tray">
+        @pl.name
+        @for(sh <- shapes) {
+            <table style="display:inline-block">
+            @for(row <- sh.matrix.arr) {
+                <tr>
+                @for(square <- row) {
+
+                    <td class = "square" style=@cssStyle(square, pl.color.char.toString)> @{square match {
+                        case service.Block(color) => color.char
+                        case _ => " "
+                    }}</td>
+                }
+                </tr>
+        }
+            </table>
+        }
+    </div>
+}
+
+@cssStyle(sq: service.Square, color: String) = @{
+    sq match {
+        case service.Block(col) => col.char.toString match {
+            case "B" => "background-color:Blue;"
+            case "G" => "background-color:Green;"
+            case "R" => "background-color:Red;"
+            case "Y" => "background-color:Yellow;"
+        }
+        case service.Full => color match {
+            case "B" => "background-color:Blue;"
+            case "G" => "background-color:Green;"
+            case "R" => "background-color:Red;"
+            case "Y" => "background-color:Yellow;"
+        }
+        case _ => ""
+    }
+}
+

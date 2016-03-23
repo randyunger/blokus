@@ -1,0 +1,45 @@
+@(controls: spectators.DisplayControls)
+
+@if(controls.currIx > 0) {
+    <a id="prev" href="@{controls.currIx-1}">Prev</a>
+}
+    <span id="snapshotIx">@controls.currIx</span>
+
+@if(controls.currIx < controls.endIx) {
+    <a id="next" href="@{controls.currIx+1}">Next</a>
+}
+
+@*<script src="build/react.js"></script>*@
+@*<script src="build/react-dom.js"></script>*@
+@*<script type="text/babel">*@
+      @*ReactDOM.render(*@
+        @*<h1>Hello, world!</h1>,*@
+        @*document.getElementById('example')*@
+      @*);*@
+    @*</script>*@
+
+<script>
+$(document).ready(function() {
+    $(document ).keyup(
+        function (e) {
+            console.log( e.keyCode);
+            if ( e.keyCode == 78 || e.keyCode == 39 ) {
+                $("#next" ).click();
+                //Why doesn't that work?!
+                var parts = window.location.pathname.split("/")
+                var newLoc = parseInt(parts[parts.length-1]) +1;
+                window.location = newLoc;
+            }
+
+            if ( e.keyCode == 37 || e.keyCode == 80 ) {
+                $("#prev" ).click();
+                //Why doesn't that work?!
+                var parts = window.location.pathname.split("/")
+                var newLoc = parseInt(parts[parts.length-1]) -1;
+                if(newLoc >= 0) window.location = newLoc;
+            }
+        }
+    );
+});
+
+</script>

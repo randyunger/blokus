@@ -1,16 +1,27 @@
 @(board: service.Board)
 
+@cssStyle(sq: service.Square) = @{
+    sq match {
+        case service.Block(color) => color.char.toString match {
+            case "B" => "background-color:Blue;"
+            case "G" => "background-color:Green;"
+            case "R" => "background-color:Red;"
+            case "Y" => "background-color:Yellow;"
+        }
+        case _ => ""
+    }
+}
 
-<!DOCTYPE html>
+<table class="board">
+@for(row <- board.matrix.arr) {
+    <tr class="board">
+    @for(square <- row) {
 
-<html>
-    <head>
-        <title>Blockus</title>
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
-        <script src="@routes.Assets.at("javascripts/jquery-1.9.0.min.js")" type="text/javascript"></script>
-    </head>
-    <body>
-    Hello World
-    </body>
-</html>
+        <td class = "board square" style=@cssStyle(square)> @{square match {
+            case service.Block(color) => " "
+            case _ => " "
+        }}</td>
+    }
+    </tr>
+}
+</table>

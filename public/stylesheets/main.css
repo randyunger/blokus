@@ -1,0 +1,17 @@
+td.square {
+  width: 20px;
+  height: 20px;
+}
+
+textarea {
+    width:400px;
+    height:200px;
+}
+
+div.tray {
+    /*height: 200px;*/
+}
+
+table.board, th.board, td.board {
+    border: 1px solid black;
+}

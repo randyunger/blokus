@@ -1,14 +1,10 @@
 package service
 
-import java.net.URL
 import java.util.UUID
 
 import play.api.libs.json._
 
-import scala.collection.mutable
-import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
-import scalaz.{\/-, -\/, \/}
 
 /**
  * Created by runger on 3/8/16.
@@ -39,11 +35,11 @@ object Player {
     JsSuccess(Color(color))
   }), Writes((color: Color) => {JsString(color.char.toString)}))
 
-  implicit val urlFmt = Format(Reads(jv => {
-    val jStr = jv.as[JsString]
-    val u = Url(jStr.value)
-    JsSuccess(u)
-  }), Writes((url: Url) => JsString(url.toString)))
+//  implicit val urlFmt = Format(Reads(jv => {
+//    val jStr = jv.as[JsString]
+//    val u = Url(jStr.value)
+//    JsSuccess(u)
+//  }), Writes((url: Url) => JsString(url.toString)))
 
   implicit val fmt = Json.format[Player]
 
@@ -69,7 +65,7 @@ object GameConfig {
   val example = GameConfig(Player.example, (10 seconds).toMillis, BoardDimensions.example, BaseShape.standardShapes, Set.empty[SpectatorConfig])
 }
 
-case class LiveGame(gameId: UUID, config: GameConfig, gameState: GameState) {
+case class GameSnapshot(gameId: UUID, config: GameConfig, gameState: GameState) {
   def activePlayers = config.players.filter(player => !gameState.bench.benchedPlayers.contains(player))
 }
 
@@ -177,25 +173,25 @@ object GameState {
   implicit val fmt = Json.format[GameState]
 }
 
-object LiveGame {
-  val example = LiveGame(UUID.fromString("12345678-9012-3456-7890-123456789012"), GameConfig.example, GameState.example)
+object GameSnapshot {
+  val example = GameSnapshot(UUID.fromString("12345678-9012-3456-7890-123456789012"), GameConfig.example, GameState.example)
 
-  def build(gameConfig: GameConfig): LiveGame = {
+  def build(gameConfig: GameConfig): GameSnapshot = {
     val id = UUID.randomUUID()
     val board = Board(gameConfig.boardDimensions.x, gameConfig.boardDimensions.y)
     val tray = Tray.build(gameConfig)
     val initialState = GameState(board, tray, Bench.empty, BonusBox.empty)
-    LiveGame(id, gameConfig, initialState)
+    GameSnapshot(id, gameConfig, initialState)
   }
 
-  implicit val fmt = Json.format[LiveGame]
+  implicit val fmt = Json.format[GameSnapshot]
 }
 
 object Pass {
   implicit val fmt = Format(Reads(jv => JsSuccess(Pass)), Writes((p: Pass.type) => JsObject(Seq.empty)))
 }
 
-case class MoveRequest(player: Player, liveGame: LiveGame)
+case class MoveRequest(player: Player, liveGame: GameSnapshot)
 
 object MoveRequest {
   implicit val fmt = Json.format[MoveRequest]

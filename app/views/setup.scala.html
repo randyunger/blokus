@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Blockus</title>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+        <script src="@routes.Assets.at("javascripts/jquery-1.9.0.min.js")" type="text/javascript"></script>
+    </head>
+    <body>
+        @*<form action="setup" method="post">*@
+            @*<div>Player 1 url: <input type="text" name="p1" value="http://localhost:9000"/></div>*@
+            @*<div>Player 2 url: <input type="text" name="p2" value="http://localhost:9000"/></div>*@
+            @*<div>Player 3 url: <input type="text" name="p3" value="http://localhost:9000"/></div>*@
+            @*<div>Player 4 url: <input type="text" name="p4" value="http://localhost:9000"/></div>*@
+        @*</form>*@
+
+
+        <div>New game:
+            <form action="/" method="POST">
+                <textarea name="config">
+                    {"players":[{"name":"Randy","color":"G","callback":{"str":"http://localhost:9000/move"}},{"name":"Bob","color":"R","callback":{"str":"http://localhost:9000/move"}},{"name":"Al","color":"Y","callback":{"str":"http://localhost:9000/move"}},{"name":"Joe","color":"B","callback":{"str":"http://localhost:9000/move"}}],"timeout":300000,"boardDimensions":{"x":20,"y":20},"shapes":["XXX","XXX\nX--\nX--","X-X\nXXX","XX\nXX","X-\nX-\nXX","-XXX\nXX--","-XX\nXX-\n-X-","-X-\nXXX\n-X-","X-\nXX","X-\nXX\nX-","XX","X","-XX\nXX-","XXXXX","-XX\nXX-\nX--","--X\nXXX\nX--","-X--\nXXXX","XXX\n-X-\n-X-","XXXX","X----\nXXXXX","X-\nXX\nXX"],"spectators":[{"url":{"str":"http://localhost:9000/watch"}}]}
+
+                </textarea>
+                <div><input type="submit"></div>
+            </form>
+        </div>
+    </body>
+</html>

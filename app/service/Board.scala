@@ -1,7 +1,8 @@
 package service
 
 import play.api.libs.json._
-import scalaz.{\/-, -\/, \/}
+
+import scalaz.{-\/, \/, \/-}
 
 /**
  * Created by runger on 3/8/16.
@@ -13,14 +14,21 @@ case class Matrix[T](arr:List[List[T]]) {
   def rotate270 = rotate180.rotate90
 
   def rotations = List(this, rotate90, rotate180, rotate270)
-  
+
   def allPositions: List[Position] = {
     val positions = for {
       x <- arr.indices
       y <- arr(x).indices
     } yield Position(x,y)
     positions.toList
-  } 
+  }
+
+  val maxX = arr.size-1
+  val maxY = arr(0).size-1
+
+  def cornerPositions: Set[Position] = {
+    Set(Position(0,0), Position(maxX,0), Position(0,maxY), Position(maxX, maxY))
+  }
 
   def atPosition(position: Position): Option[T] = {
     for {
@@ -281,7 +289,8 @@ object BaseShape {
     BaseShape(Matrix(shape))
   }
 
-  val standardShapes = Set(monomino, duo, threeBar, trio, block, ell, tetris)
+  val standardShapes = Set(monomino, duo, threeBar, trio, block, tetris, fourBar, ell, zig, bigEll, capitalT, flyingWedge
+  , ziiig, zag, fiveBar, squareNub, wiggle, you, eff, plus, lump)
 
   implicit val shapeFmt = Format(Reads(jv => {
     val str = jv.as[JsString].value
@@ -310,10 +319,16 @@ case class Board(matrix: Matrix[Square]) {
   }
 
   def canPlace(move: Move): Boolean = {
+    val checkCorners = cornerMatchesColor(move) || boardHasNoSquaresOfColor(move.piece.color)
+
     allOverlapSquaresAreEmpty(move) &&
-//      cornerMatchesColor(move) &&
+      checkCorners &&
       noEdgeAdjacency(move) &&
       firstPlayInCorner(move)
+  }
+  
+  def boardHasNoSquaresOfColor(color: Color) = {
+    countSquaresFor(color) == 0
   }
 
   def boardPositionsForMove(move: Move): Set[Position] = {
@@ -349,14 +364,26 @@ case class Board(matrix: Matrix[Square]) {
     yOff <- List(-1, 1)
   } yield position.offset(Position(xOff, yOff))
 
+  def adjacents(move: Move): Set[Position] = {
+    def overlap(pos: Position) = boardPositionsForMove(move).contains(pos)
+
+    //Get all positions adjacent to any position in a square being played into
+    val candAdj = boardPositionsForMove(move).flatMap(pos => adjacents(pos))
+
+    //Filter out squares overlapping the current move
+    candAdj.filter(pos => !overlap(pos))
+  }
+
   def adjacents(position: Position) = for {
     offsetPosition <- List(Position(-1,0), Position(0,-1), Position(0,1), Position(1,0))
   } yield position.offset(offsetPosition)
   
   def cornerMatchesColor(move: Move): Boolean = {
     //The corners of the move contain a square
+    val moveCorners = corners(move)
+
     // such that the color of the square matches the color of the move
-    corners(move).exists(pos => squareAt(pos) match {
+    moveCorners.exists(pos => squareAt(pos) match {
       case Block(color) if color == move.piece.color => true
       case _ => false
     })
@@ -386,11 +413,26 @@ case class Board(matrix: Matrix[Square]) {
   }
 
   def noEdgeAdjacency(move: Move): Boolean = {
-    true
+    val moveAdjacents = adjacents(move)
+
+    moveAdjacents.forall(pos => {
+      val sq = squareAt(pos)
+      sq match {
+        case Block(color) => {
+          if (color == move.piece.color) false
+          else true
+        }
+        case _ => true
+      }
+    })
   }
 
   def firstPlayInCorner(move: Move): Boolean = {
-    true
+    //If this is the first move for this color
+    if(boardHasNoSquaresOfColor(move.piece.color)){
+      //The positions contained in this move must include a board corner
+      boardPositionsForMove(move).exists(pos => matrix.cornerPositions.contains(pos))
+    } else true
   }
 
 }

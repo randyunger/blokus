@@ -1,4 +1,4 @@
-@(board: Html, tray: Html, config: Html)
+@(board: Html, tray: Html, config: Html, gameList: Html, gameControls: Html)
 
 <!DOCTYPE html>
 
@@ -11,8 +11,10 @@
     </head>
     <body>
         <div>Blockus</div>
-        <div>@board</div>
+        <div style="float: left">@board</div>
         <div>@tray</div>
         <div>@config</div>
+        <div>@gameList</div>
+        <div>@gameControls</div>
     </body>
 </html>

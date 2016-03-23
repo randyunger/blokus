@@ -4,15 +4,15 @@ import java.util.concurrent.TimeoutException
 
 import com.fasterxml.jackson.core.JsonParseException
 import play.Logger
+import play.api.Play.current
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.libs.ws.WS
+
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import play.api.Play.current
-
-import scalaz.{\/, \/-, -\/}
+import scalaz.{-\/, \/, \/-}
 
 /**
  * Created by runger on 3/8/16.
@@ -26,11 +26,13 @@ object GameRunner {
 class GameRunner {
 
   @tailrec
-  final def proceed(liveGame: LiveGame): Unit = {
+  final def proceed(liveGame: GameSnapshot): Unit = {
     println("Board state:")
     println(liveGame.gameState.board.matrix.stringRep)
     println()
     println(liveGame.gameState.tray)
+
+    liveGame.config.spectators.foreach(spec => sendUpdate(spec, liveGame))
 
     //Main loop
     if(!isOver(liveGame)) {
@@ -43,8 +45,8 @@ class GameRunner {
     }
   }
 
-  def getNextState(liveGame: LiveGame) = {
-    val currentPlayer = getNextPlayer(liveGame)
+  def getNextState(liveGame: GameSnapshot) = {
+    val currentPlayer = getNextPlayer(liveGame).get
     Logger.info(s"Next player is ${currentPlayer.name}")
     val nextMoveOrPassO = requestMove(currentPlayer, liveGame)
 
@@ -93,9 +95,9 @@ class GameRunner {
     (board, Set.empty, Set(player), Set.empty)
   }
 
-  def isOver(liveGame: LiveGame) = liveGame.gameState.bench.isFull(liveGame.config)
+  def isOver(liveGame: GameSnapshot) = liveGame.gameState.bench.isFull(liveGame.config)
 
-  def getNextPlayer(liveGame: LiveGame): Player = {
+  def getNextPlayer(liveGame: GameSnapshot): Option[Player] = {
     val active = liveGame.activePlayers
 
     //Sort by most pieces
@@ -104,17 +106,27 @@ class GameRunner {
     }
 
     //Get most piece count
-    val mostPieces = bpc.head._2.size
+    bpc.headOption.map(_._2.size) match {
+      case None => {
+        None
+      }
+      case Some(mostPieces) => {
+        //Take while equal to that count
+        val tiedByPieceCount = bpc.takeWhile(_._2.size == mostPieces)
 
-    //Take while equal to that count
-    val tiedByPieceCount = bpc.takeWhile(_._2.size == mostPieces)
+        //Sort list according to config
+        val order = tiedByPieceCount.sortBy(pl => liveGame.config.players.zipWithIndex.find {
+          case (configPl, _) => pl._1 == configPl
+        }.map(_._2))
 
-    //Sort list according to config
-    val order = tiedByPieceCount.sortBy(pl => liveGame.config.players.zipWithIndex.find {
-      case (configPl, _) => pl._1 == configPl
-    }.map(_._2))
-
-    order.head._1
+        order.headOption match {
+          case None => {
+            None
+          }
+          case Some((pl, sh)) => Some(pl)
+        }
+      }
+    }
   }
 
   def shapeFromTray(tray: Tray, player: Player, piece: Piece): Problem \/ BaseShape = {
@@ -130,7 +142,7 @@ class GameRunner {
     Logger.info(score.toString)
   }
 
-  def checkBonuses(player: Player, shape: BaseShape, liveGame: LiveGame): Set[Bonus] = {
+  def checkBonuses(player: Player, shape: BaseShape, liveGame: GameSnapshot): Set[Bonus] = {
     val bonuses = mutable.Set.empty[Bonus]
     val pieceCount = liveGame.gameState.tray.pieceCountForPlayer(player)
     if(pieceCount == 1) { //One because we're looking at the tray PRIOR to this move being applied.
@@ -141,7 +153,7 @@ class GameRunner {
     bonuses.toSet
   }
 
-  def tallyScores(liveGame: LiveGame): Score = {
+  def tallyScores(liveGame: GameSnapshot): Score = {
     def countSquares(board: Board, player: Player): Int = board.countSquaresFor(player.color)
     def bonuses(bonusBox: BonusBox, player: Player): Int = bonusBox.tally(player)
     def score(player: Player) = {
@@ -155,10 +167,10 @@ class GameRunner {
     Score(scores)
   }
 
-  def requestMove(player: Player, liveGame: LiveGame): Problem \/ Pass.type \/ Move = {
+  def requestMove(player: Player, liveGame: GameSnapshot): Problem \/ Pass.type \/ Move = {
     val url = player.callback
-    Logger.info(s"requesting move from: ${url.toString}")
-    val w = WS.url(url.toString)
+    Logger.info(s"requesting move from: ${url.str}")
+    val w = WS.url(url.str)
 
     val moveRequest = MoveRequest(player, liveGame)
     val gameJson = Json.toJson(moveRequest)
@@ -183,6 +195,26 @@ class GameRunner {
     }
 
     problemOrMove
+  }
+
+  def sendUpdate(spectator: SpectatorConfig, snapshot: GameSnapshot): Unit = {
+    val url = spectator.url
+    Logger.info(s"requesting move from: ${url.str}")
+    val w = WS.url(url.str)
+//    val playerO = getNextPlayer(snapshot)
+//    val player = playerO.get
+
+    val payload = snapshot//MoveRequest(player, snapshot)
+    val gameJson = Json.toJson(payload)
+
+    val r = w.post(gameJson)
+    val watchResponse = try {
+      val res = Await.result(r, snapshot.config.timeout millis)
+      Logger.info(res.body)
+    } catch {
+      case j: JsonParseException => -\/(-\/(ParseProblem(j.getLocalizedMessage)))
+      case t: TimeoutException => -\/(-\/(MoveTimedOut()))
+    }
   }
 
   def sendDq(): Unit = {}

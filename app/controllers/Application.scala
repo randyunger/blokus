@@ -126,16 +126,24 @@ object Application extends Controller {
   }
 
   def displaySnapshot(id: String, ix: Int) = Action { request =>
-    Bleachers().getSpectator(id) match {
-      case None => BadRequest("Unknown id")
-      case Some(spectator) => {
-        val board = spectator.renderBoard(ix)
-        val tray = spectator.renderTray(ix)
-        val config = spectator.renderConfig()
-        val gameList = Bleachers().renderGameList()
-        val gameControls = spectator.renderControls(ix)
 
-        Ok(views.html.display(board, tray, config, gameList, gameControls))
+    try {
+      Bleachers().getSpectator(id) match {
+        case None => BadRequest("Unknown id")
+        case Some(spectator) => {
+          val board = spectator.renderBoard(ix)
+          val tray = spectator.renderTray(ix)
+          val config = spectator.renderConfig()
+          val gameList = Bleachers().renderGameList()
+          val gameControls = spectator.renderControls(ix)
+
+          Ok(views.html.display(board, tray, config, gameList, gameControls))
+        }
+      }
+    } catch {
+      case ex: IndexOutOfBoundsException => {
+        Thread.sleep(1000)
+        Redirect(s"${ix}")
       }
     }
   }

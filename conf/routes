@@ -13,7 +13,8 @@ GET         /display                controllers.Application.displayStart
 GET         /display/:id/:ix        controllers.Application.displaySnapshot(id, ix: Int)
 
 # Blokus Agent:
-POST        /move                   controllers.Application.move
+POST        /randomMove                   controllers.Application.randomMove
+POST        /randyMove                   controllers.Application.randyMove
 
 # Blokus Spectator
 POST        /watch                  controllers.Application.watch

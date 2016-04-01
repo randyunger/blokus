@@ -8,7 +8,7 @@ scalaVersion := "2.11.8"
 
 libraryDependencies += "ch.qos.logback" % "logback-core" % "1.1.1"
 
-libraryDependencies += "org.scalaz" % "scalaz-core_2.11" % "7.2.0"
+libraryDependencies += "org.scalaz" % "scalaz-core_2.11" % "7.1.4"
 
 libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.6"
 

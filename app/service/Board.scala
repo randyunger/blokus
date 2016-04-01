@@ -104,9 +104,18 @@ case class Color(char: Char)
 //See Piece for an application of a color and a rotation to a shape
 case class BaseShape(matrix: Matrix[Square]) {
   //All four piece rotations of this base shape, with the color applied
-  def pieces(color: Color): Set[Piece] = {
+  def allOrientations(color: Color): Set[Piece] = {
+    //todo: Add flipping
     matrix.rotations.map(mat => Piece(mat, color)).toSet
   }
+
+  def countFullSquares = matrix.arr.flatten.count(t => t match {
+    case _: Empty.type => false
+    case _: OutOfBounds.type => false
+    case _: Full.type => true
+    case _: Block => true
+  })
+
   def squareAt(position: Position) = matrix.atPosition(position).getOrElse(OutOfBounds)
   override def toString = matrix.stringRep
 }

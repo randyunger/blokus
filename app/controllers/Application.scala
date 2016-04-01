@@ -1,6 +1,6 @@
 package controllers
 
-import agents.RandomAgent
+import agents.{RandomAgent, RandyAgent}
 import com.ning.http.client.AsyncHttpClientConfig
 import play.api._
 import play.api.libs.json.Json
@@ -79,15 +79,32 @@ object Application extends Controller {
     }
   }
 
-  val agent = new RandomAgent
-
-  def move = Action(parse.json) { request =>
+  val randomAgent = new RandomAgent
+  def randomMove = Action(parse.json) { request =>
     Logger.info(s"Got a request to play a move")
 
     val res = request.body.asOpt[MoveRequest] match {
       case None => BadRequest("Couldn't get move request")
       case Some(moveRequest) => {
-        val moveOrPass = agent.play(moveRequest.player, moveRequest.liveGame)
+        val moveOrPass = randomAgent.play(moveRequest.player, moveRequest.liveGame)
+        val moveJs = moveOrPass match {
+          case -\/(pass) => Json.toJson(pass)
+          case \/-(move) => Json.toJson(move)
+        }
+        Ok(moveJs)
+      }
+    }
+    res
+  }
+
+  val rAgent = new RandyAgent
+  def randyMove = Action(parse.json) { request =>
+    Logger.info(s"Got a request to play a move")
+
+    val res = request.body.asOpt[MoveRequest] match {
+      case None => BadRequest("Couldn't get move request")
+      case Some(moveRequest) => {
+        val moveOrPass = rAgent.play(moveRequest.player, moveRequest.liveGame)
         val moveJs = moveOrPass match {
           case -\/(pass) => Json.toJson(pass)
           case \/-(move) => Json.toJson(move)
@@ -155,10 +172,10 @@ object StartGame extends App {
   val server = "http://localhost:9000"
 
   val gameConfig = GameConfig(List(
-    Player("Randy", Color('G'), Url("http://localhost:9000/move"))
-  ,Player("Bob", Color('R'), Url("http://localhost:9000/move"))
-  ,Player("Al", Color('Y'), Url("http://localhost:9000/move"))
-  ,Player("Joe", Color('B'), Url("http://localhost:9000/move"))
+    Player("Randy", Color('R'), Url("http://localhost:9000/randyMove"))
+  ,Player("Brian", Color('B'), Url("http://localhost:9000/randomMove"))
+  ,Player("Al", Color('Y'), Url("http://localhost:9000/randomMove"))
+  ,Player("Akash", Color('G'), Url("http://localhost:9000/randomMove"))
   ), (5 minutes).toMillis, BoardDimensions(20, 20), BaseShape.standardShapes,
     Set(SpectatorConfig(Url("http://localhost:9000/watch"))))
 

@@ -74,7 +74,7 @@ class BoardTest extends FunSuite {
     val shape = BaseShape("XX\nXX")
 
     val validMoves = for {
-      piece <- shape.pieces(Color('G'))
+      piece <- shape.allOrientations(Color('G'))
       pos <- board.matrix.allPositions
       move = Move(pos, piece)
       if board.canPlace(move)

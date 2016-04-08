@@ -1,15 +1,6 @@
 @(square: service.Square, colorO:Option[service.Color], className: String = "square")
 
-<td class="@className" style=@cssStyle(square, colorO)> @{square match {
-    case service.Block(color) => " "
-    case _ => " "
-}}</td>
-
-@cssStyle(sq: service.Square, cO:Option[service.Color]) = @{
-    val color = sq match {
-        case service.Block(col) => col
-        case _ => cO.getOrElse(service.Color('Z'))
-    }
+@colorTable(color: service.Color) = @{
     color.char.toString match {
         case "B" => "background-color:Blue;"
         case "G" => "background-color:Green;"
@@ -20,4 +11,20 @@
         case "Z" => ""
     }
 }
+
+@cssStyle(sq: service.Square, cO:Option[service.Color]) = @{
+    val color = sq match {
+        case service.Block(col) => col
+        case service.Full => cO.getOrElse(service.Color('Z'))
+        case _ => service.Color('Z')
+    }
+
+    colorTable(color)
+}
+
+<td class="@className" style=@cssStyle(square, colorO)> @{square match {
+    case service.Block(color) => " "
+    case _ => " "
+}}</td>
+
 

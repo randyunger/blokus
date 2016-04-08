@@ -37,5 +37,12 @@ class MatrixTest extends FunSuite {
     assert(rotations.contains(Matrix.applySq("XX\nX-")))
   }
 
+  test("mirror") {
+    val matrix = Matrix.applySq("XXX\nX--")
+    val mirror = matrix.mirrorH
+
+    assert(mirror == Matrix.applySq("X--\nXXX"))
+
+  }
 
 }

@@ -71,6 +71,8 @@ class GameRunner {
               liveGame.gameState.board.place(playedMove) match {
                 case -\/(illegalMove) => {
                   Logger.warn(s"Problem with move content: $illegalMove")
+
+                  //Submitting an illegal move gets you disqualified!
                   dq(illegalMove, currentPlayer, liveGame.gameState.board)
                 }
                 case \/-(newBoard) => {

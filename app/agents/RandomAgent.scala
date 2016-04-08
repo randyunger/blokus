@@ -10,6 +10,29 @@ import scalaz.{-\/, \/, \/-}
 
 class RandomAgent {
 
+//  def playN(myPlayer: Player, liveGame: GameSnapshot) = {
+//    val myShapes = liveGame.gameState.tray.shapesFor(myPlayer)._2
+//
+//    val myPieces = myShapes.flatMap(shape => shape.allOrientations(myPlayer.color))
+//    val myCorners = liveGame.gameState.board.emptyCorners(myPlayer.color)
+//
+//    val allMoves = for {
+//      piece <- myPieces
+//      corner <- myCorners
+//      move = Move(corner, piece)
+//      if liveGame.gameState.board.canPlace(move)
+//    } yield move
+//
+//    val shuffledMoves = Random.shuffle(allMoves.toList)
+//
+//    shuffledMoves.headOption match {
+//      case None => -\/(Pass)
+//      case Some(move) => \/-(move)
+//    }
+//
+//  }
+
+//  def playDeterministic(myPlayer: Player, liveGame: GameSnapshot): Pass.type \/ Move = {
   def play(myPlayer: Player, liveGame: GameSnapshot): Pass.type \/ Move = {
     val myShapes = liveGame.gameState.tray.shapesFor(myPlayer)._2
     val myPieces = myShapes.map(shape => shape.allOrientations(myPlayer.color))

@@ -71,7 +71,7 @@ class BoardTest extends FunSuite {
   test("show options") {
     val board = Board("-----\n-----\n--G--\n-----\n-----")
 //    val piece = Piece("X\nX", Color('G'))
-    val shape = BaseShape("XX\nXX")
+    val shape = BaseShape("XX-\n-XX")
 
     val validMoves = for {
       piece <- shape.allOrientations(Color('G'))
@@ -85,7 +85,16 @@ class BoardTest extends FunSuite {
       println(nb.matrix.stringRep)
       println()
     })
-
   }
 
+  ignore("Empty corners"){
+    var board = Board("--G--\n--G--\nGGG--\n--G--\n-----")
+//    val corners = board.emptyCorners(Color('G'))
+//    corners.foreach(cornerPos => {
+//      val move = Move(cornerPos, Piece("G", Color('G')))
+//      val newBoard = board.place(move)
+//      board = newBoard.toOption.get
+//    })
+    println(board.matrix.stringRep)
+  }
 }

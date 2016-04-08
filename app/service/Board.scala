@@ -13,7 +13,24 @@ case class Matrix[T](arr:List[List[T]]) {
   def rotate180 = rotate90.rotate90
   def rotate270 = rotate180.rotate90
 
+  def mirrorH = Matrix(arr.reverse)
+
   def rotations = List(this, rotate90, rotate180, rotate270)
+
+  def corners(position: Position) = for {
+    xOff <- List(-1, 1)
+    yOff <- List(-1, 1)
+  } yield position.offset(Position(xOff, yOff))
+
+  def surroundingPositions(position: Position): Set[Position] = {
+    val offsets = for {
+      x <- -1 to 1
+      y <- -1 to 1
+      if !(x==0 && y==0)
+    } yield Position(x,y)
+    val pos = offsets.map(o => o.offset(position))
+    pos.toSet
+  }
 
   def allPositions: List[Position] = {
     val positions = for {
@@ -37,7 +54,7 @@ case class Matrix[T](arr:List[List[T]]) {
     } yield cell
   }
 
-  def find(predicate: T => Boolean): List[T] = {
+  def filter(predicate: T => Boolean): List[T] = {
     for {
       row <- arr
       cell <- row
@@ -105,8 +122,11 @@ case class Color(char: Char)
 case class BaseShape(matrix: Matrix[Square]) {
   //All four piece rotations of this base shape, with the color applied
   def allOrientations(color: Color): Set[Piece] = {
-    //todo: Add flipping
-    matrix.rotations.map(mat => Piece(mat, color)).toSet
+    //Rotate and mirror
+    val rotations = matrix.rotations.map(mat => Piece(mat, color)).toSet
+    val mirror = matrix.mirrorH
+    val mirrorRot = mirror.rotations.map(mat => Piece(mat, color)).toSet
+    rotations ++ mirrorRot
   }
 
   def countFullSquares = matrix.arr.flatten.count(t => t match {
@@ -120,8 +140,12 @@ case class BaseShape(matrix: Matrix[Square]) {
   override def toString = matrix.stringRep
 }
 
-trait Square
-object Empty extends Square
+trait Square {
+  def isEmpty = false
+}
+object Empty extends Square {
+  override def isEmpty = true
+}
 trait Full extends Square
 object Full extends Full
 object OutOfBounds extends Square
@@ -145,9 +169,9 @@ case class Piece(matrix: Matrix[Square], color: Color) {
 
   //Return the matching base shape, if any
   def baseShapeFrom(baseShapes: Set[BaseShape]): Option[BaseShape] = {
-    val pieceRotations = matrix.rotations
+    val pieceOrientations = matrix.rotations ++ matrix.mirrorH.rotations
     baseShapes.find(sh => {
-      pieceRotations.contains(sh.matrix)
+      pieceOrientations.contains(sh.matrix)
     })
   }
 
@@ -335,7 +359,7 @@ case class Board(matrix: Matrix[Square]) {
       noEdgeAdjacency(move) &&
       firstPlayInCorner(move)
   }
-  
+
   def boardHasNoSquaresOfColor(color: Color) = {
     countSquaresFor(color) == 0
   }
@@ -355,6 +379,31 @@ case class Board(matrix: Matrix[Square]) {
     boardSquares.forall(sq => sq == Empty)
   }
 
+  //todo: This would be a cool method. Give it a color and it will identify all of the open corners
+  //that the color can play on. However this implementation is seriously flawed.
+//  def emptyCorners(color: Color): Set[Position] = {
+//    def overlap(pos: Position) = squareAt(pos) == Block(color)
+//    val candidates = emptySurroundingPositions(color)
+//    //Filter by
+//    candidates.filter(pos => {
+//      //1)a corner of surround position overlaps
+//      //2)no adjacents overlap
+//      matrix.corners(pos).exists(overlap) &&
+//        !adjacents(pos).exists(overlap)
+//    })
+//  }
+
+  def positionsForColor(color: Color) = matrix.allPositions.filter(pos => squareAt(pos) match {
+    case Block(col) if col == color => true
+    case _ => false
+  })
+
+  def emptySurroundingPositions(color: Color): Set[Position] = {
+    val surrounds = positionsForColor(color).map(pos => matrix.surroundingPositions(pos)).toSet
+    val emptySurrounds = surrounds.flatten.filter(pos => squareAt(pos).isEmpty)
+    emptySurrounds
+  }
+
   def corners(move: Move): Set[Position] = {
     def overlap(pos: Position) = boardPositionsForMove(move).contains(pos)
     //Get surrounding positions
@@ -363,15 +412,10 @@ case class Board(matrix: Matrix[Square]) {
     candidates.filter(pos => {
       //1)a corner of surround position overlaps
       //2)no adjacents overlap
-      corners(pos).exists(overlap) &&
+      matrix.corners(pos).exists(overlap) &&
       !adjacents(pos).exists(overlap)
     })
   }
-
-  def corners(position: Position) = for {
-    xOff <- List(-1, 1)
-    yOff <- List(-1, 1)
-  } yield position.offset(Position(xOff, yOff))
 
   def adjacents(move: Move): Set[Position] = {
     def overlap(pos: Position) = boardPositionsForMove(move).contains(pos)
@@ -386,7 +430,7 @@ case class Board(matrix: Matrix[Square]) {
   def adjacents(position: Position) = for {
     offsetPosition <- List(Position(-1,0), Position(0,-1), Position(0,1), Position(1,0))
   } yield position.offset(offsetPosition)
-  
+
   def cornerMatchesColor(move: Move): Boolean = {
     //The corners of the move contain a square
     val moveCorners = corners(move)
@@ -399,22 +443,12 @@ case class Board(matrix: Matrix[Square]) {
   }
 
   def surroundingPositions(move: Move): Set[Position] = {
-    val surr = boardPositionsForMove(move).map(pos => surroundingPositions(pos))
+    val surr = boardPositionsForMove(move).map(pos => matrix.surroundingPositions(pos))
     surr.flatten
   }
 
-  def surroundingPositions(position: Position): Set[Position] = {
-    val offsets = for {
-      x <- -1 to 1
-      y <- -1 to 1
-      if !(x==0 && y==0)
-    } yield Position(x,y)
-    val pos = offsets.map(o => o.offset(position))
-    pos.toSet
-  }
-
   def countSquaresFor(color: Color): Int = {
-    val matchingSquares = matrix.find(sq => sq match {
+    val matchingSquares = matrix.filter(sq => sq match {
       case Block(c) if c == color => true
       case _ => false
     })
@@ -471,10 +505,4 @@ object Board {
     val str = jv.as[JsString].value
     JsSuccess(Board.apply(str))
   }), Writes((board: Board) => JsString(board.matrix.stringRep)))
-}
-
-object Game extends App {
-  val b = Board.empty
-  val o = b.matrix.stringRep
-  println(o)
 }

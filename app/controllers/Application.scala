@@ -167,17 +167,23 @@ object Application extends Controller {
 
 }
 
+object DefaultGame {
+  val defaultConfig = GameConfig(List(
+    Player("Randy", Color('R'), Url("http://localhost:9000/randyMove"))
+    ,Player("Brian", Color('B'), Url("http://localhost:9000/randomMove"))
+    ,Player("Trey", Color('P'), Url("http://localhost:9000/randomMove"))
+    ,Player("Akash", Color('G'), Url("http://localhost:9000/randomMove"))
+  ), (5 minutes).toMillis, BoardDimensions(20, 20), BaseShape.standardShapes,
+    Set(SpectatorConfig(Url("http://localhost:9000/watch"))))
+
+  val defaultConfigJson = Json.stringify(Json.toJson(defaultConfig))
+}
+
 object StartGame extends App {
 
   val server = "http://localhost:9000"
 
-  val gameConfig = GameConfig(List(
-    Player("Randy", Color('R'), Url("http://localhost:9000/randyMove"))
-  ,Player("Brian", Color('B'), Url("http://localhost:9000/randomMove"))
-  ,Player("Al", Color('Y'), Url("http://localhost:9000/randomMove"))
-  ,Player("Akash", Color('G'), Url("http://localhost:9000/randomMove"))
-  ), (5 minutes).toMillis, BoardDimensions(20, 20), BaseShape.standardShapes,
-    Set(SpectatorConfig(Url("http://localhost:9000/watch"))))
+  val gameConfig = DefaultGame.defaultConfig
 
 
   val gameJv = Json.toJson(gameConfig)

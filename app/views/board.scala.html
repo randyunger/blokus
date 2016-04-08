@@ -1,26 +1,10 @@
 @(board: service.Board)
 
-@cssStyle(sq: service.Square) = @{
-    sq match {
-        case service.Block(color) => color.char.toString match {
-            case "B" => "background-color:Blue;"
-            case "G" => "background-color:Green;"
-            case "R" => "background-color:Red;"
-            case "Y" => "background-color:Yellow;"
-        }
-        case _ => ""
-    }
-}
-
 <table class="board">
 @for(row <- board.matrix.arr) {
     <tr class="board">
-    @for(square <- row) {
-
-        <td class = "board square" style=@cssStyle(square)> @{square match {
-            case service.Block(color) => " "
-            case _ => " "
-        }}</td>
+    @for(sq <- row) {
+        @square(sq, None, "board square")
     }
     </tr>
 }

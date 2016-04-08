@@ -1,3 +1,4 @@
+@import DefaultGame.defaultConfigJson
 
 <!DOCTYPE html>
 
@@ -20,7 +21,7 @@
         <div>New game:
             <form action="/" method="POST">
                 <textarea name="config">
-                    {"players":[{"name":"Randy","color":"R","callback":{"str":"http://localhost:9000/randyMove"}},{"name":"Brian","color":"B","callback":{"str":"http://localhost:9000/randomMove"}},{"name":"Al","color":"Y","callback":{"str":"http://localhost:9000/randomMove"}},{"name":"Akash","color":"G","callback":{"str":"http://localhost:9000/randomMove"}}],"timeout":300000,"boardDimensions":{"x":20,"y":20},"shapes":["XXX","XXX\nX--\nX--","X-X\nXXX","XX\nXX","X-\nX-\nXX","-XXX\nXX--","-XX\nXX-\n-X-","-X-\nXXX\n-X-","X-\nXX","X-\nXX\nX-","XX","X","-XX\nXX-","XXXXX","-XX\nXX-\nX--","--X\nXXX\nX--","-X--\nXXXX","XXX\n-X-\n-X-","XXXX","X----\nXXXXX","X-\nXX\nXX"],"spectators":[{"url":{"str":"http://localhost:9000/watch"}}]}
+                    @{defaultConfigJson}
 
                 </textarea>
                 <div><input type="submit"></div>

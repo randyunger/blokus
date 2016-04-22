@@ -1,0 +1,16 @@
+@(scores: spectators.DisplayScores)
+
+<table>
+    <thead>
+        <th>Name</th>
+        <th>Total Points</th>
+        <th>Games Won</th>
+    </thead>
+    @for((player, wins) <- scores.wins){
+        <tr>
+            <td>@player.name</td>
+            <td>@scores.totalScores.getOrElse(player, 0)</td>
+            <td>@wins</td>
+        </tr>
+    }
+</table>

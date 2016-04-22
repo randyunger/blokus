@@ -53,21 +53,22 @@ class Bleachers() {
   def renderGameList(): Html = {
     val list = spectators.entrySet().toList.map(e => e.getKey -> e.getValue)
     val byStartTime = list.sortBy(_._2.firstSnapshot.map(_.time.getMillis).getOrElse(-1l))
-    val idsByStart = byStartTime.map{case(id, sp) => id -> sp.lastSnapshot.map(_.time).getOrElse(future)}
+    val idsByStart = byStartTime.map{case(id, sp) => id -> sp.latestSnapshot.map(_.time).getOrElse(future)}
     views.html.gameList(idsByStart)
   }
 }
 
-case class SpectatedSnapshot(snapshot: GameSnapshot, time: DateTime)
+case class SpectatedSnapshot(snapshot: GameSnapshot, time: DateTime, currentScore: Score, isComplete: Boolean)
 
 case class Spectator(gameConfig: GameConfig) {
   val history = mutable.Buffer.empty[SpectatedSnapshot]
 
   def firstSnapshot = history.sortBy(_.time.getMillis).headOption
-  def lastSnapshot = history.sortBy(_.time.getMillis).lastOption
+  def latestSnapshot = history.sortBy(_.time.getMillis).lastOption
 
   def observe(liveGame: GameSnapshot) = {
-    val ss = SpectatedSnapshot(liveGame, new DateTime())
+    val isComplete = liveGame.gameState.isComplete
+    val ss = SpectatedSnapshot(liveGame, new DateTime(), liveGame.currentScore, isComplete)
     history.append(ss)
   }
 
@@ -105,6 +106,34 @@ case class Spectator(gameConfig: GameConfig) {
     views.html.controls(dc)
   }
 
+  def finalSnapshot(): Option[SpectatedSnapshot] = {
+    history.find(_.isComplete)
+  }
+
+  def renderScore(): Html = {
+    val spectators = Bleachers().spectators.toList
+    val finalSnapshots = spectators.flatMap {case (id, sp) => sp.finalSnapshot()}
+    val latestSnapshots = spectators.flatMap {case (id, sp) => sp.latestSnapshot}
+
+    val allPlayers = latestSnapshots.flatMap(sn => sn.snapshot.config.players)
+
+    val winners = finalSnapshots.flatMap(snapshot => {
+      snapshot.snapshot.leaders.map(_._1)
+    })
+
+    val wins = allPlayers.map(pl => (pl -> winners.count(winner => winner == pl))).toMap
+
+    val totalPoints = allPlayers.map(pl => {
+      val points = latestSnapshots.flatMap(sn => sn.currentScore.forPlayer(pl))
+      val sumForPlayer = points.sum
+      pl -> sumForPlayer
+    })
+
+    val ds = DisplayScores(wins, totalPoints.toMap)
+
+    views.html.score(ds)
+  }
+
   def renderBlankControls(): Html = {
     views.html.controls(DisplayControls(0,0))
   }
@@ -113,3 +142,4 @@ case class Spectator(gameConfig: GameConfig) {
 }
 
 case class DisplayControls(currIx: Int, endIx: Int)
+case class DisplayScores(wins: Map[Player, Int], totalScores: Map[Player, Int])

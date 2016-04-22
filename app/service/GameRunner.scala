@@ -29,15 +29,17 @@ class GameRunner {
   final def proceed(liveGame: GameSnapshot): Unit = {
     println("Board state:")
     println(liveGame.gameState.board.matrix.stringRep)
-    println()
-    println(liveGame.gameState.tray)
+//    println()
+//    println(liveGame.gameState.tray)
 
     liveGame.config.spectators.foreach(spec => sendUpdate(spec, liveGame))
 
     //Main loop
     if(!isOver(liveGame)) {
       val nextState = getNextState(liveGame)
-      proceed(liveGame.copy(gameState = nextState))
+      val withUpdatedState = liveGame.copy(gameState = nextState)
+      val withUpdatedScore = withUpdatedState.copy(currentScore = tallyScores(withUpdatedState))
+      proceed(withUpdatedScore)
       
     } else {
       val scores = tallyScores(liveGame)
@@ -88,7 +90,9 @@ class GameRunner {
     val newTray = liveGame.gameState.tray.discard(currentPlayer, playedShapes)
     val newBench = liveGame.gameState.bench.add(newDqs)
     val newBonusBox = liveGame.gameState.bonusBox.add(currentPlayer, newBonuses)
-    GameState(updatedBoard, newTray, newBench, newBonusBox)
+    val isComplete = isOver(newBench, liveGame.config)
+    val nextGameStateIter = GameState(updatedBoard, newTray, newBench, newBonusBox, isComplete)
+    nextGameStateIter
   }
 
   def dq(problem: Problem, player: Player, board: Board): (Board, Set[BaseShape], Set[Player], Set[Bonus]) = {
@@ -97,7 +101,8 @@ class GameRunner {
     (board, Set.empty, Set(player), Set.empty)
   }
 
-  def isOver(liveGame: GameSnapshot) = liveGame.gameState.bench.isFull(liveGame.config)
+  def isOver(liveGame: GameSnapshot): Boolean = isOver(liveGame.gameState.bench, liveGame.config)
+  def isOver(bench: Bench, config: GameConfig): Boolean = bench.isFull(config)
 
   def getNextPlayer(liveGame: GameSnapshot): Option[Player] = {
     val active = liveGame.activePlayers
@@ -123,7 +128,7 @@ class GameRunner {
 
         order.headOption match {
           case None => {
-            None
+             None
           }
           case Some((pl, sh)) => Some(pl)
         }

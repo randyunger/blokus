@@ -2,6 +2,8 @@ package service
 
 import org.scalatest.FunSuite
 
+import scalaz.{-\/, \/-}
+
 /**
  * Created by runger on 3/10/16.
  */
@@ -87,14 +89,91 @@ class BoardTest extends FunSuite {
     })
   }
 
-  ignore("Empty corners"){
-    var board = Board("--G--\n--G--\nGGG--\n--G--\n-----")
-//    val corners = board.emptyCorners(Color('G'))
-//    corners.foreach(cornerPos => {
-//      val move = Move(cornerPos, Piece("G", Color('G')))
-//      val newBoard = board.place(move)
-//      board = newBoard.toOption.get
-//    })
+  test("Empty corners"){
+    val dontEnforceCorners = BoardRules.defaultRules.copy(cornerAdjacentSameColor = false, firstPlayInCorner = false)
+
+    var board = Board("RR---\n--G--\n-G---\n--G--\n-----", dontEnforceCorners)
+    val corners = board.emptyCorners(Color('G'))
+    corners.foreach(cornerPos => {
+      val move = Move(cornerPos, Piece("X", Color('X')))
+      val newBoard = board.place(move)
+      board = newBoard.toOption.get
+    })
     println(board.matrix.stringRep)
   }
+
+  test("empty corners empty board") {
+    val dontEnforceCorners = BoardRules.defaultRules.copy(cornerAdjacentSameColor = false, firstPlayInCorner = false)
+    var board = Board("-----\n-----\n-----\n-----\n-----", dontEnforceCorners)
+    val corners = board.emptyCorners(Color('G'))
+    corners.foreach(cornerPos => {
+      val move = Move(cornerPos, Piece("X", Color('X')))
+      val newBoard = board.place(move)
+      board = newBoard.toOption.get
+    })
+    println(board.matrix.stringRep)
+  }
+
+  test("empty corners to play on") {
+    //    val dontEnforceCorners = BoardRules.defaultRules.copy(cornerAdjacentSameColor = false, firstPlayInCorner = false)
+
+    var board = Board("------\n-GG---\n---G--\n---G--\n---G--\n------")
+    val corners = board.emptyCorners(Color('G'))
+
+    //    val pieces = List(Piece("XX", Color('X')), Piece("-X\nXX", Color('X')))
+    val shapes = List(BaseShape("XX"), BaseShape("-X\nXX"))
+
+    shapes.foreach(shape => {
+      shape.allOrientations(Color('G')).foreach(piece => {
+        piece.fullPositions.foreach(fullPos => {
+          corners.foreach(corner => {
+            val pos = corner.offset(fullPos)
+            val move = Move(pos, piece)
+            board.place(move) match {
+              case -\/(prob) => {
+                //                println(s"$prob \n\n")
+              }
+              case \/-(board) => {
+                println(board.matrix.stringRep)
+                println("\n\n")
+              }
+            }
+          })
+        })
+      })
+    })
+  }
+
+  test("empty corners to play on, empty board") {
+    //    val dontEnforceCorners = BoardRules.defaultRules.copy(cornerAdjacentSameColor = false, firstPlayInCorner = false)
+
+    var board = Board("------\n------\n------\n------\n------\n------")
+    val corners = board.emptyCorners(Color('G'))
+
+    //    val pieces = List(Piece("XX", Color('X')), Piece("-X\nXX", Color('X')))
+    val shapes = List(BaseShape("--X\nXXX"))
+
+    shapes.foreach(shape => {
+      shape.allOrientations(Color('G')).foreach(piece => {
+        piece.fullPositions.foreach(fullPos => {
+          corners.foreach(corner => {
+            val pos = corner.offset(fullPos)
+            val move = Move(pos, piece)
+            board.place(move) match {
+              case -\/(prob) => {
+                //                println(s"$prob \n\n")
+              }
+              case \/-(board) => {
+                println(board.matrix.stringRep)
+                println("\n\n")
+              }
+            }
+          })
+        })
+      })
+    })
+  }
 }
+
+
+

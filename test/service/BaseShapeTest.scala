@@ -8,6 +8,7 @@ import org.scalatest.FunSuite
 class BaseShapeTest extends FunSuite {
   test("All orientations") {
     val sh = BaseShape("XXX\nX--")
+//    val shapes = Set(BaseShape("--X\nXXX"))
     val c = Color('C')
     val ors = sh.allOrientations(c)
 

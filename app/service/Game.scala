@@ -19,6 +19,16 @@ object BoardDimensions {
   implicit val fmt = Json.format[BoardDimensions]
 }
 
+trait TupleFmt {
+  implicit def tuple2Wr[A : Format, B : Format] = Format[(A, B)](
+    Reads(jv => {
+      val one = (jv \ "1").as[A]
+      val two = (jv \ "2").as[B]
+      JsSuccess((one, two))
+    }),
+    Writes( (t: Tuple2[A,B]) =>  Json.obj("1" -> t._1, "2" -> t._2) ))
+}
+
 case class Url(str: String)
 
 object Url {
@@ -57,16 +67,24 @@ object SpectatorConfig {
   implicit val fmt = Json.format[SpectatorConfig]
 }
 
-case class GameConfig(players: List[Player], timeout: Long, boardDimensions: BoardDimensions, shapes: Set[BaseShape], spectators: Set[SpectatorConfig])
+case class GameConfig(players: List[Player], timeout: Long, rounds: Int, boardDimensions: BoardDimensions, shapes: Set[BaseShape], spectators: Set[SpectatorConfig])
 
 object GameConfig {
 
   implicit val fmt = Json.format[GameConfig]
-  val example = GameConfig(Player.example, (10 seconds).toMillis, BoardDimensions.example, BaseShape.standardShapes, Set.empty[SpectatorConfig])
+  val example = GameConfig(Player.example, (10 seconds).toMillis, 20, BoardDimensions.example, BaseShape.standardShapes, Set.empty[SpectatorConfig])
 }
 
-case class GameSnapshot(gameId: UUID, config: GameConfig, gameState: GameState) {
+case class GameSnapshot(gameId: UUID, config: GameConfig, gameState: GameState, currentScore: Score) {
+
   def activePlayers = config.players.filter(player => !gameState.bench.benchedPlayers.contains(player))
+
+  //Can have multiple leaders
+  def leaders = {
+    val byScore = currentScore.scores.sortBy{case(player, score) => score}.reverse
+    val highScore = byScore.head._2
+    byScore.takeWhile{case(player, score) => score == highScore}
+  }
 }
 
 case class Bench(benchedPlayers: Set[Player]) {
@@ -81,7 +99,20 @@ object Bench {
   implicit val fmt = Json.format[Bench]
 }
 
-case class Score(scores: List[(Player, Int)])
+case class Score(scores: List[(Player, Int)]) {
+  def forPlayer(player: Player) = scores.find{case(pl, _) => pl == player}.map(_._2)
+}
+
+object Score extends TupleFmt {
+
+  def build(players: List[Player]) = {
+    Score(players.map(pl => (pl, 0)))
+  }
+
+  implicit val fmt = Json.format[Score]
+
+  val example = Score(GameConfig.example.players.map(pl => (pl, 0)))
+}
 
 case class Move(position: Position, piece: Piece)
 
@@ -112,16 +143,6 @@ case class Tray(shapes: Set[(Player, Set[BaseShape])]) {
     shapes.toList.sortBy{case(pl, sh) => pieceCountForPlayer(pl)}
   }
 
-}
-
-trait TupleFmt {
-  implicit def tuple2Wr[A : Format, B : Format] = Format[(A, B)](
-    Reads(jv => {
-      val one = (jv \ "1").as[A]
-      val two = (jv \ "2").as[B]
-      JsSuccess((one, two))
-    }),
-    Writes( (t: Tuple2[A,B]) =>  Json.obj("1" -> t._1, "2" -> t._2) ))
 }
 
 object Tray extends TupleFmt {
@@ -166,22 +187,22 @@ object BonusBox extends TupleFmt {
   implicit val fmt = Json.format[BonusBox]
 }
 
-case class GameState(board: Board, tray: Tray, bench: Bench, bonusBox: BonusBox)
+case class GameState(board: Board, tray: Tray, bench: Bench, bonusBox: BonusBox, isComplete: Boolean)
 
 object GameState {
-  val example = GameState(Board.empty, Tray.example, Bench.empty, BonusBox.empty)
+  val example = GameState(Board.empty, Tray.example, Bench.empty, BonusBox.empty, false)
   implicit val fmt = Json.format[GameState]
 }
 
 object GameSnapshot {
-  val example = GameSnapshot(UUID.fromString("12345678-9012-3456-7890-123456789012"), GameConfig.example, GameState.example)
+  val example = GameSnapshot(UUID.fromString("12345678-9012-3456-7890-123456789012"), GameConfig.example, GameState.example, Score.example)
 
   def build(gameConfig: GameConfig): GameSnapshot = {
     val id = UUID.randomUUID()
     val board = Board(gameConfig.boardDimensions.x, gameConfig.boardDimensions.y)
     val tray = Tray.build(gameConfig)
-    val initialState = GameState(board, tray, Bench.empty, BonusBox.empty)
-    GameSnapshot(id, gameConfig, initialState)
+    val initialState = GameState(board, tray, Bench.empty, BonusBox.empty, false)
+    GameSnapshot(id, gameConfig, initialState, Score.build(gameConfig.players))
   }
 
   implicit val fmt = Json.format[GameSnapshot]

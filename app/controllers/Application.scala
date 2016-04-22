@@ -49,10 +49,13 @@ object Application extends Controller {
     val resp = conf match {
       case None => None//BadRequest("Couldn't get game config")
       case Some(gameConfig) => {
-        val liveGame = GameSnapshot.build(gameConfig)
+        var liveGame = GameSnapshot.build(gameConfig)
         Future {
           try {
-            GameRunner().proceed(liveGame)
+            (1 to gameConfig.rounds).foreach(i => {
+              GameRunner().proceed(liveGame)
+              liveGame = GameSnapshot.build(gameConfig)
+            })
           } catch {
             case t: Throwable => t.printStackTrace()
           }
@@ -138,8 +141,9 @@ object Application extends Controller {
     val config = spectator.renderConfig()
     val gameList = Bleachers().renderGameList()
     val gameControls = spectator.renderBlankControls()
+    val score = Html("")
 
-    Ok(views.html.display(board, tray, config, gameList, gameControls))
+    Ok(views.html.display(board, tray, config, gameList, gameControls, score))
   }
 
   def displaySnapshot(id: String, ix: Int) = Action { request =>
@@ -153,8 +157,9 @@ object Application extends Controller {
           val config = spectator.renderConfig()
           val gameList = Bleachers().renderGameList()
           val gameControls = spectator.renderControls(ix)
+          val score = spectator.renderScore()
 
-          Ok(views.html.display(board, tray, config, gameList, gameControls))
+          Ok(views.html.display(board, tray, config, gameList, gameControls, score))
         }
       }
     } catch {
@@ -173,7 +178,7 @@ object DefaultGame {
     ,Player("Brian", Color('B'), Url("http://localhost:9000/randomMove"))
     ,Player("Trey", Color('P'), Url("http://localhost:9000/randomMove"))
     ,Player("Akash", Color('G'), Url("http://localhost:9000/randomMove"))
-  ), (5 minutes).toMillis, BoardDimensions(20, 20), BaseShape.standardShapes,
+  ), (5 minutes).toMillis, 10, BoardDimensions(20, 20), BaseShape.standardShapes,
     Set(SpectatorConfig(Url("http://localhost:9000/watch"))))
 
   val defaultConfigJson = Json.stringify(Json.toJson(defaultConfig))

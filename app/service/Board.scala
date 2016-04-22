@@ -153,6 +153,7 @@ case class Block(color: Color) extends Full
 
 case class Position(x: Int, y: Int) {
   def offset(pos: Position) = Position(x + pos.x, y + pos.y)
+  def unOffset(pos: Position) = Position(x - pos.x, y - pos.y)
 }
 
 object Position {
@@ -332,7 +333,19 @@ object BaseShape {
 
 }
 
-case class Board(matrix: Matrix[Square]) {
+object BoardRules {
+  val defaultRules: BoardRules = BoardRules(overlapSquaresEmpty = true, cornerAdjacentSameColor = true, edgesCantBeAdjacent = true, firstPlayInCorner = true)
+  def apply() = defaultRules
+}
+
+case class BoardRules(
+                        overlapSquaresEmpty: Boolean
+                       , cornerAdjacentSameColor: Boolean
+                       , edgesCantBeAdjacent: Boolean
+                       , firstPlayInCorner: Boolean
+)
+
+case class Board(matrix: Matrix[Square], boardRules: BoardRules = BoardRules.defaultRules) {
 
   def squareAt(position: Position) = {
     matrix.atPosition(position).getOrElse(OutOfBounds)
@@ -346,18 +359,22 @@ case class Board(matrix: Matrix[Square]) {
       //At the offset from the placed position
       val offsetPos = piecePositions.map(pos => move.position.offset(pos))
       //Update the board to the piece's color
-      \/-(Board(matrix.setPositions(offsetPos, Block(move.piece.color))))
+      \/-(this.copy(matrix = matrix.setPositions(offsetPos, Block(move.piece.color))))
     }
     else -\/(IllegalMove(move))
   }
 
   def canPlace(move: Move): Boolean = {
-    val checkCorners = cornerMatchesColor(move) || boardHasNoSquaresOfColor(move.piece.color)
 
-    allOverlapSquaresAreEmpty(move) &&
-      checkCorners &&
-      noEdgeAdjacency(move) &&
-      firstPlayInCorner(move)
+    val overlap = !boardRules.overlapSquaresEmpty || allOverlapSquaresAreEmpty(move)
+    val cornerAdjacent = !boardRules.cornerAdjacentSameColor || (cornerMatchesColor(move) || boardHasNoSquaresOfColor(move.piece.color))
+    val noEdgesAdjacent = !boardRules.edgesCantBeAdjacent || noEdgeAdjacency(move)
+    val firstPInCorner = !boardRules.firstPlayInCorner || firstPlayInCorner(move)
+
+    overlap &&
+      cornerAdjacent &&
+      noEdgesAdjacent &&
+      firstPInCorner
   }
 
   def boardHasNoSquaresOfColor(color: Color) = {
@@ -379,19 +396,26 @@ case class Board(matrix: Matrix[Square]) {
     boardSquares.forall(sq => sq == Empty)
   }
 
-  //todo: This would be a cool method. Give it a color and it will identify all of the open corners
-  //that the color can play on. However this implementation is seriously flawed.
-//  def emptyCorners(color: Color): Set[Position] = {
-//    def overlap(pos: Position) = squareAt(pos) == Block(color)
-//    val candidates = emptySurroundingPositions(color)
-//    //Filter by
-//    candidates.filter(pos => {
-//      //1)a corner of surround position overlaps
-//      //2)no adjacents overlap
-//      matrix.corners(pos).exists(overlap) &&
-//        !adjacents(pos).exists(overlap)
-//    })
-//  }
+  def boardCorners = Set(Position(0,0), Position(0, matrix.maxY), Position(matrix.maxX, 0), Position(matrix.maxX, matrix.maxY))
+
+  // Give it a color and it will identify all of the open corners
+  //that the color can play on.
+  def emptyCorners(color: Color): Set[Position] = {
+    def overlap(pos: Position) = squareAt(pos) == Block(color)
+
+    if(boardHasNoSquaresOfColor(color)) {
+      boardCorners.filter(pos => squareAt(pos).isEmpty)
+    } else {
+      val candidates = emptySurroundingPositions(color)
+      //Filter by
+      candidates.filter(pos => {
+        //1)a corner of surround position overlaps
+        //2)no adjacents overlap
+        matrix.corners(pos).exists(overlap) &&
+          !adjacents(pos).exists(overlap)
+      })
+    }
+  }
 
   def positionsForColor(color: Color) = matrix.allPositions.filter(pos => squareAt(pos) match {
     case Block(col) if col == color => true
@@ -496,13 +520,18 @@ object Board {
 
   val empty = Board(Matrix(twentyByTwenty))
 
+  def apply(str: String, boardRules: BoardRules): Board = {
+    val mat = Matrix.applySq(str)
+    Board(mat, boardRules)
+  }
+
   def apply(str: String): Board = {
     val mat = Matrix.applySq(str)
-    Board(mat)
+    Board(mat, BoardRules.defaultRules)
   }
 
   implicit val boardFmt = Format(Reads(jv => {
     val str = jv.as[JsString].value
-    JsSuccess(Board.apply(str))
+    JsSuccess(Board.apply(str))  //todo: Accept custom rules via json
   }), Writes((board: Board) => JsString(board.matrix.stringRep)))
 }

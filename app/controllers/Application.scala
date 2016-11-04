@@ -170,6 +170,36 @@ object Application extends Controller {
     }
   }
 
+  def dash = Action {
+//    import play.twirl.api._
+//    val spectator = Bleachers().getOneOrDefault
+//    val board = Html("")//spectator.renderStartBoard()
+//    val tray = spectator.renderStartTray()
+//    val config = spectator.renderConfig()
+//    val gameList = Bleachers().renderGameList()
+//    val gameControls = spectator.renderBlankControls()
+//    val score = Html("")
+
+    val winsChart = Bleachers().renderWinsChart()
+    val scoreChart = Bleachers().renderScoreChart()
+
+    Ok(views.html.dash(winsChart, scoreChart))
+  }
+
+  def runningScoreAPI = Action {
+    val cts = Bleachers().runningScore
+    val jv = Json.toJson(cts)
+//    val json = Json.stringify(jv)
+    Ok(jv)
+  }
+
+  def winCountsAPI = Action {
+    val cts = Bleachers().winCounts
+    val jv = Json.toJson(cts)
+//    val json = Json.stringify(jv)
+    Ok(jv)
+  }
+
 }
 
 object DefaultGame {

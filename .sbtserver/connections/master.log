@@ -1,0 +1,7 @@
+New log file opened at Thu Oct 13 11:18:19 PDT 2016 by 6915@us160514
+Taking next connection to: 52611
+New client attempting to connect on port: 52612-52611
+  Address = /127.0.0.1:52611
+This client on port 52612 has uuid db409c41-e1fd-47c3-800d-246393601fb5 configName activator humanReadableName Activator protocolVersion 3 featureTags Vector()
+Connected Clients: activator-db409c41-e1fd-47c3-800d-246393601fb5
+Taking next connection to: 52611

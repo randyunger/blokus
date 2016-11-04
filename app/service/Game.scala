@@ -22,11 +22,11 @@ object BoardDimensions {
 trait TupleFmt {
   implicit def tuple2Wr[A : Format, B : Format] = Format[(A, B)](
     Reads(jv => {
-      val one = (jv \ "1").as[A]
-      val two = (jv \ "2").as[B]
+      val one = (jv \ "a").as[A]
+      val two = (jv \ "b").as[B]
       JsSuccess((one, two))
     }),
-    Writes( (t: Tuple2[A,B]) =>  Json.obj("1" -> t._1, "2" -> t._2) ))
+    Writes( (t: Tuple2[A,B]) =>  Json.obj("a" -> t._1, "b" -> t._2) ))
 }
 
 case class Url(str: String)
@@ -113,6 +113,14 @@ object Score extends TupleFmt {
 
   val example = Score(GameConfig.example.players.map(pl => (pl, 0)))
 }
+
+object RunningScore extends TupleFmt {
+  implicit val fmt = Json.format[RunningScore]
+
+  val example = RunningScore(GameConfig.example.players.map(pl => (pl, List(0,1,1,2))))
+}
+
+case class RunningScore(scores: List[(Player, List[Int])])
 
 case class Move(position: Position, piece: Piece)
 

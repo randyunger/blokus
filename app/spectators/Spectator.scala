@@ -4,6 +4,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 import org.joda.time.DateTime
+import play.api.Logger
 import play.twirl.api.Html
 import service._
 
@@ -55,6 +56,57 @@ class Bleachers() {
     val byStartTime = list.sortBy(_._2.firstSnapshot.map(_.time.getMillis).getOrElse(-1l))
     val idsByStart = byStartTime.map{case(id, sp) => id -> sp.latestSnapshot.map(_.time).getOrElse(future)}
     views.html.gameList(idsByStart)
+  }
+
+  def renderWinsChart(): Html = {
+    views.html.winsChart()
+  }
+
+  def renderScoreChart(): Html = {
+    views.html.scoreChart()
+  }
+
+  def latestSnapshots = spectators.flatMap {case (id, sp) => sp.latestSnapshot}
+
+  def finalSnapshots = spectators.flatMap {case (id, sp) => sp.finalSnapshot()}
+
+  def winners = finalSnapshots.map(snapshot => {
+    snapshot.snapshot.leaders.map(_._1)
+  })
+
+  def allPlayers = spectators.flatMap(sp => sp._2.gameConfig.players).toSet
+
+  def winCounts = {
+    val score = allPlayers.map(pl => {
+      var winCt = 0
+      val ptsList = finalSnapshots.map(sn => {
+        val leaders = sn.snapshot.leaders.map(_._1)
+        val points = if(leaders.contains(pl)) 1 else 0
+        winCt = winCt + points
+        winCt
+      }).toList
+      val finalPtsList = if(ptsList.isEmpty) List(0) else ptsList
+      pl -> finalPtsList
+    }).toList
+    RunningScore(score)
+  }
+
+  def runningScore = {
+    Logger.info("api request for score")
+
+    val score = allPlayers.map(pl => {
+      var rPts = 0
+      //This won't work right if there are games involving different groups of players?
+      //Will stay plateaued for the games it misses out on
+      val ptsList = latestSnapshots.map(sn => {
+        val currPts = sn.snapshot.currentScore.scores.find(_._1 == pl).map(_._2).getOrElse(0)
+        rPts = rPts + currPts
+        rPts
+      }).toList
+      val finalPtsList = if(ptsList.isEmpty) List(0) else ptsList
+      pl -> finalPtsList
+    }).toList
+    RunningScore(score)
   }
 }
 
@@ -112,19 +164,13 @@ case class Spectator(gameConfig: GameConfig) {
 
   def renderScore(): Html = {
     val spectators = Bleachers().spectators.toList
-    val finalSnapshots = spectators.flatMap {case (id, sp) => sp.finalSnapshot()}
-    val latestSnapshots = spectators.flatMap {case (id, sp) => sp.latestSnapshot}
 
-    val allPlayers = latestSnapshots.flatMap(sn => sn.snapshot.config.players)
+    val allPlayers = Bleachers().latestSnapshots.flatMap(sn => sn.snapshot.config.players)
 
-    val winners = finalSnapshots.flatMap(snapshot => {
-      snapshot.snapshot.leaders.map(_._1)
-    })
-
-    val wins = allPlayers.map(pl => (pl -> winners.count(winner => winner == pl))).toMap
+    val wins = allPlayers.map(pl => (pl -> Bleachers().winners.flatten.count(winner => winner == pl))).toMap
 
     val totalPoints = allPlayers.map(pl => {
-      val points = latestSnapshots.flatMap(sn => sn.currentScore.forPlayer(pl))
+      val points = Bleachers().latestSnapshots.flatMap(sn => sn.currentScore.forPlayer(pl))
       val sumForPlayer = points.sum
       pl -> sumForPlayer
     })

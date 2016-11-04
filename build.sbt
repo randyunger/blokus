@@ -15,3 +15,6 @@ libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.6"
 libraryDependencies ++= Seq( jdbc , anorm , cache , ws )
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )  
+
+
+fork in run := true

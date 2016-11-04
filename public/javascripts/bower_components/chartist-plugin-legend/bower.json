@@ -1,0 +1,32 @@
+{
+  "name": "chartist-plugin-legend",
+  "description": "Legend plugin for Chartist.js.",
+  "main": [
+    "chartist-plugin-legend.js",
+    "chartist-plugin-legend.scss"
+  ],
+  "authors": [
+    "Kees Kluskens <kees@codeyellow.nl>",
+    "Chawalit Limsowan <chawalit@pinacono.com>"
+  ],
+  "dependencies": {
+    "chartist": "~0.9.4"
+  },
+  "license": "MIT",
+  "keywords": [
+    "chartist",
+    "legend"
+  ],
+  "homepage": "https://github.com/Pinacono/chartist-plugin-legend",
+  "moduleType": [
+    "node"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "app/components",
+    "test",
+    "tests"
+  ]
+}

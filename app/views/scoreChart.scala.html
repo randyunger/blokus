@@ -1,0 +1,43 @@
+<div class='ct-chart score-chart ct-perfect-fourth'></div>
+
+<script src=@routes.Assets.at("javascripts/jquery-1.9.0.min.js")></script>
+<script src=@routes.Assets.at("javascripts/bower_components/chartist/dist/chartist.js")></script>
+<script src=@routes.Assets.at("javascripts/bower_components/chartist-plugin-legend/chartist-plugin-legend.js")></script>
+<link rel="stylesheet"
+href="@routes.Assets.at("stylesheets/chart.css")">
+<script>
+    var options = {
+        axisY: {
+            "onlyInteger": true
+        }
+//        ,plugins: [
+//            Chartist.plugins.legend()
+//        ]
+        ,width:"300px"
+        ,height:"200px"
+    };
+
+    var mapToFormat = function(o){
+      var mName = o.a.name;
+      var mData = o.b;
+      var total = 0;
+      total = $.each(mData,function(){total+=parseFloat(this) || 0;});
+
+      return {name: mName + " (" + total + ")", data: mData};
+    };
+
+    $(function() {
+        $.get( "runningScore", function( data ) {
+//          $(".result" ).html( data );
+          window.winsData = data;
+          if(data.scores.length > 0) {
+              var scores = data.scores || {};
+              var mapped = $.map(scores, mapToFormat);
+              var series = {series: mapped};
+              new Chartist.Line('.score-chart', series, options);
+          } else {
+            console.log("no scores");
+          }
+        });
+    });
+</script>

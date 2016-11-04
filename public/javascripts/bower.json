@@ -1,0 +1,22 @@
+{
+  "name": "blokus",
+  "homepage": "https://github.com/randyunger/blokus",
+  "authors": [
+    "Randy <runger@gravity.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "chartist": "^0.9.7",
+    "chartist-plugin-legend": "^0.1.3"
+  }
+}

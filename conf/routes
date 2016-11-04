@@ -9,6 +9,12 @@ POST        /newGame                controllers.Application.newGameAPI
 # Blokus server UI:
 GET         /                       controllers.Application.index
 POST        /                       controllers.Application.newGameUI
+
+#Multi-game dash
+GET         /dash                   controllers.Application.dash
+GET         /winCounts              controllers.Application.winCountsAPI
+GET         /runningScore           controllers.Application.runningScoreAPI
+
 GET         /display                controllers.Application.displayStart
 GET         /display/:id/:ix        controllers.Application.displaySnapshot(id, ix: Int)
 
